@@ -1,0 +1,338 @@
+
+====================================================================================================
+###  REGRESSION  (Linear Regression)   target = Life expectancy
+====================================================================================================
+
+====================================================================================================
+STEP 1 [linear] Preprocess & explore
+====================================================================================================
+Instances (rows after dropping missing target) : 2928
+Features                                       : 20
+Train / Test split (80/20, seed 42)            : 2342 / 586
+Encoding: Status one-hot (drop_first)
+Missing values per feature (before imputation):
+Population                         644
+Hepatitis B                        553
+GDP                                443
+Total expenditure                  226
+Alcohol                            193
+Schooling                          160
+Income composition of resources    160
+BMI                                 32
+thinness 1-19 years                 32
+thinness 5-9 years                  32
+Polio                               19
+Diphtheria                          19
+Imputation: median (fitted on train)   |   Scaling: StandardScaler (fitted on train)
+
+Target summary:
+ count    2928.000
+mean       69.225
+std         9.524
+min        36.300
+25%        63.100
+50%        72.100
+75%        75.700
+max        89.000
+
+====================================================================================================
+STEP 2 [linear] Feature selection / reduction  -  features retained
+====================================================================================================
+Low Variance Filter  (Min-Max variance > 0.005): dropped ['infant deaths', 'Measles', 'under-five deaths', 'Population']
+High Correlation Filter (|r| > 0.85)            : dropped ['under-five deaths', 'GDP', 'thinness 5-9 years']
+Factor Analysis (Kaiser eigenvalue>1, varimax)  : 6 factors
+     Factor1: ['infant deaths', 'under-five deaths']
+     Factor2: ['thinness 1-19 years', 'thinness 5-9 years']
+     Factor3: ['percentage expenditure', 'GDP']
+     Factor4: ['Hepatitis B', 'Polio', 'Diphtheria']
+     Factor5: ['Income composition of resources', 'Schooling']
+     Factor6: ['Alcohol']
+              Technique  n_features                                                                                                                                                                                                                                                                            Features retained
+         Original (all)          20 Year, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, under-five deaths, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, Population, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling, Status_Developing
+    Low Variance Filter          16                                                        Year, Adult Mortality, Alcohol, percentage expenditure, Hepatitis B, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling, Status_Developing
+High Correlation Filter          17                                             Year, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, Population, thinness 1-19 years, Income composition of resources, Schooling, Status_Developing
+        Factor Analysis           6                                             Factor1(infant deaths+under-five deaths) | Factor2(thinness 1-19 years+thinness 5-9 years) | Factor3(percentage expenditure+GDP) | Factor4(Hepatitis B+Polio+Diphtheria) | Factor5(Income composition of resources+Schooling) | Factor6(Alcohol)
+   Backward Elimination          10                                                                                                                                             Adult Mortality, infant deaths, BMI, under-five deaths, Diphtheria, HIV/AIDS, GDP, Income composition of resources, Schooling, Status_Developing
+      Forward Selection          10                                                                                                                                                               Adult Mortality, Measles, BMI, Polio, Diphtheria, HIV/AIDS, GDP, Income composition of resources, Schooling, Status_Developing
+
+====================================================================================================
+STEP 3 [linear] Models on original vs selected features - metrics & 5-fold CV
+====================================================================================================
+            Feature set  n_features  CV R2 mean  CV R2 std  CV RMSE mean  CV RMSE std  Test R2  Test RMSE  Test MAE
+         Original (all)          20      0.8153     0.0137        4.1067       0.1805   0.8195     3.9515    2.9273
+    Low Variance Filter          16      0.8054     0.0141        4.2149       0.1757   0.8102     4.0521    3.0056
+High Correlation Filter          17      0.8061     0.0118        4.2086       0.1566   0.8085     4.0698    3.0225
+        Factor Analysis           6      0.6851     0.0414        5.3500       0.3378   0.7140     4.9735    3.5900
+   Backward Elimination          10      0.8096     0.0132        4.1701       0.1742   0.8210     3.9352    2.9099
+      Forward Selection          10      0.8041     0.0120        4.2291       0.1524   0.8088     4.0669    3.0167
+
+====================================================================================================
+STEP 4 [linear] Gradient Descent (from scratch): learning rate & iterations
+====================================================================================================
+Original features, max 3000 iterations. loss@N = training loss after N iterations
+ learning rate   status  converged at iter  loss@10  loss@50  loss@100  loss@500  loss@1000  loss@3000  final test R2
+        0.0001       ok                NaN   0.4965   0.4814    0.4634    0.3499     0.2620     0.1435         0.7184
+        0.0010       ok             2364.0   0.4665   0.3517    0.2629    0.1184     0.1014     0.0944         0.8083
+        0.0100       ok              478.0   0.2724   0.1187    0.1014    0.0941     0.0938     0.0933         0.8109
+        0.1000       ok             1505.0   0.1020   0.0941    0.0938    0.0929     0.0922     0.0906         0.8176
+        0.5000 DIVERGED                NaN      NaN      NaN       NaN       NaN        NaN        NaN            NaN
+        1.5000 DIVERGED                NaN      NaN      NaN       NaN       NaN        NaN        NaN            NaN
+
+Convergence by feature set (lr=0.1, 3000 iterations):
+            Feature set  n_features  max |r| between inputs  converged at iter (tol 1e-6)  final train loss  GD test R2
+         Original (all)          20                  0.9964                          1505            0.0906      0.8176
+    Low Variance Filter          16                  0.9334                           101            0.0952      0.8102
+High Correlation Filter          17                  0.7949                            87            0.0943      0.8085
+        Factor Analysis           6                  0.0804                            62            0.1560      0.7140
+   Backward Elimination          10                  0.9964                          1691            0.0940      0.8187
+      Forward Selection          10                  0.7949                            89            0.0960      0.8088
+
+====================================================================================================
+STEP 5 [linear] GridSearchCV
+====================================================================================================
+ElasticNet(alpha, l1_ratio), scoring = neg RMSE
+            Feature set  n_features                        best params  best CV RMSE  Test R2  Test RMSE  Test MAE
+         Original (all)          20  {'alpha': 0.001, 'l1_ratio': 0.9}        4.1062   0.8194     3.9520    2.9256
+    Low Variance Filter          16   {'alpha': 0.01, 'l1_ratio': 1.0}        4.2141   0.8103     4.0504    3.0011
+High Correlation Filter          17   {'alpha': 0.01, 'l1_ratio': 0.1}        4.2077   0.8086     4.0685    3.0208
+        Factor Analysis           6   {'alpha': 0.01, 'l1_ratio': 1.0}        5.3497   0.7141     4.9730    3.5886
+   Backward Elimination          10 {'alpha': 0.0001, 'l1_ratio': 0.1}        4.1700   0.8209     3.9359    2.9098
+      Forward Selection          10   {'alpha': 0.01, 'l1_ratio': 0.1}        4.2286   0.8090     4.0649    3.0158
+
+====================================================================================================
+STEP 6 [linear] Comparison of all approaches
+====================================================================================================
+            Feature set  n_features  CV R2 mean  CV R2 std  Test R2  converged at iter (tol 1e-6)  Test R2 (tuned)
+         Original (all)          20      0.8153     0.0137   0.8195                          1505           0.8194
+    Low Variance Filter          16      0.8054     0.0141   0.8102                           101           0.8103
+High Correlation Filter          17      0.8061     0.0118   0.8085                            87           0.8086
+        Factor Analysis           6      0.6851     0.0414   0.7140                            62           0.7141
+   Backward Elimination          10      0.8096     0.0132   0.8210                          1691           0.8209
+      Forward Selection          10      0.8041     0.0120   0.8088                            89           0.8090
+
+OBSERVATIONS (computed from the tables above)
+  * Best tuned test score : Backward Elimination (0.8209, 10 features) vs Original 0.8194 with 20 features.
+  * Smallest set within 0.01 of the best CV score: Backward Elimination (10 features, CV 0.8096 vs best 0.8153).
+  * Factor Analysis: 6 factors, CV 0.6851 vs Original 0.8153 (change -0.1301) - big compression, clear accuracy cost, lost interpretability.
+  * GD convergence: fastest = Factor Analysis (62 iters, max input |r| = 0.08); slowest = Backward Elimination (1691 iters, max input |r| = 1.00).
+  * CV std ranges 0.0118-0.0414: differences between the top feature sets are of the same order as fold-to-fold noise, so do not over-read tiny gaps.
+
+====================================================================================================
+STEP 7 [linear] SELF-LEARNING: how do we increase accuracy / reduce error?
+====================================================================================================
+(A) Forward-selection sweep: CV score vs number of features
+ k                           added  CV score
+ 1                       Schooling    0.5030
+ 2                 Adult Mortality    0.6903
+ 3                        HIV/AIDS    0.7463
+ 4                      Diphtheria    0.7710
+ 5                             BMI    0.7828
+ 6 Income composition of resources    0.7908
+ 7               Status_Developing    0.7962
+ 8                           Polio    0.7995
+ 9                             GDP    0.8022
+10                         Measles    0.8041
+11                     Hepatitis B    0.8059
+12             thinness 1-19 years    0.8072
+13               Total expenditure    0.8073
+14                      Population    0.8073
+15          percentage expenditure    0.8073
+16              thinness 5-9 years    0.8073
+17                         Alcohol    0.8072
+18               under-five deaths    0.8070
+19                   infant deaths    0.8156
+20                            Year    0.8153
+    -> suggested k (smallest k within 0.01 of max CV score) = 11
+
+(B) Embedded selectors
+    Lasso / L1 keeps        : ['Year', 'Adult Mortality', 'infant deaths', 'Alcohol', 'percentage expenditure', 'Hepatitis B', 'Measles', 'BMI', 'under-five deaths', 'Polio', 'Total expenditure', 'Diphtheria', 'HIV/AIDS', 'GDP', 'Population', 'thinness 1-19 years', 'Income composition of resources', 'Schooling', 'Status_Developing']
+    Random-Forest top-10    : ['HIV/AIDS', 'Income composition of resources', 'Adult Mortality', 'BMI', 'under-five deaths', 'Schooling', 'thinness 5-9 years', 'Alcohol', 'Year', 'thinness 1-19 years']
+             Feature set  n_features  CV R2 mean  CV R2 std  CV RMSE mean  CV RMSE std  Test R2  Test RMSE  Test MAE
+   Lasso / L1 (embedded)          19      0.8154     0.0137        4.1055       0.1801   0.8195     3.9516    2.9275
+    Random-Forest top-10          10      0.7765     0.0084        4.5203       0.1623   0.7807     4.3551    3.2039
+Forward @ suggested k=11          11      0.8059     0.0121        4.2099       0.1457   0.8094     4.0600    3.0229
+
+(C) Improvement ladder (same split, every step builds on the previous)
+                                       Step  Test RMSE  Test R2  CV RMSE mean  CV RMSE std
+        0. Baseline (median impute + scale)     3.9515   0.8195        4.1074       0.1812
+              1. + log1p on skewed features     3.5425   0.8549        3.6031       0.1628
+                        2. + KNN imputation     3.4091   0.8656        3.5090       0.1574
+3. + degree-2 polynomial + Ridge (alpha=10)     2.4167   0.9325        2.5866       0.1402
+         4. Benchmark: HistGradientBoosting     1.6660   0.9679        2.0279       0.1392
+
+(D) Validation honesty: random KFold vs GroupKFold by country
+              CV scheme  mean r2  std r2
+    Random KFold (rows)   0.8153  0.0137
+GroupKFold (by country)   0.7898  0.0254
+
+  -> Linear-model steps 0->3 cut test RMSE 3.951 -> 2.417 (38.8% lower); boosting benchmark reaches 1.666, showing remaining non-linear structure.
+
+====================================================================================================
+###  CLASSIFICATION  (Logistic Regression)   target = Status (Developed=1)
+====================================================================================================
+
+====================================================================================================
+STEP 1 [logistic] Preprocess & explore
+====================================================================================================
+Instances (rows after dropping missing target) : 2938
+Features                                       : 20
+Train / Test split (80/20, seed 42)            : 2350 / 588
+Encoding: target Status -> Developed=1 / Developing=0; Country dropped (identifier)
+Missing values per feature (before imputation):
+Population                         652
+Hepatitis B                        553
+GDP                                448
+Total expenditure                  226
+Alcohol                            194
+Income composition of resources    167
+Schooling                          163
+thinness 5-9 years                  34
+thinness 1-19 years                 34
+BMI                                 34
+Polio                               19
+Diphtheria                          19
+Life expectancy                     10
+Adult Mortality                     10
+Imputation: median (fitted on train)   |   Scaling: StandardScaler (fitted on train)
+
+Target summary:
+ Status
+0    2426
+1     512
+
+====================================================================================================
+STEP 2 [logistic] Feature selection / reduction  -  features retained
+====================================================================================================
+Low Variance Filter  (Min-Max variance > 0.005): dropped ['infant deaths', 'Measles', 'under-five deaths', 'Population']
+High Correlation Filter (|r| > 0.85)            : dropped ['under-five deaths', 'GDP', 'thinness 5-9 years']
+Factor Analysis (Kaiser eigenvalue>1, varimax)  : 6 factors
+     Factor1: ['infant deaths', 'under-five deaths']
+     Factor2: ['Income composition of resources', 'Schooling']
+     Factor3: ['percentage expenditure', 'GDP']
+     Factor4: ['thinness 1-19 years', 'thinness 5-9 years']
+     Factor5: ['Hepatitis B', 'Polio', 'Diphtheria']
+     Factor6: ['Life expectancy', 'Adult Mortality', 'HIV/AIDS']
+              Technique  n_features                                                                                                                                                                                                                                                                          Features retained
+         Original (all)          20 Year, Life expectancy, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, under-five deaths, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, Population, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling
+    Low Variance Filter          16                                                        Year, Life expectancy, Adult Mortality, Alcohol, percentage expenditure, Hepatitis B, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling
+High Correlation Filter          17                                             Year, Life expectancy, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, Population, thinness 1-19 years, Income composition of resources, Schooling
+        Factor Analysis           6          Factor1(infant deaths+under-five deaths) | Factor2(Income composition of resources+Schooling) | Factor3(percentage expenditure+GDP) | Factor4(thinness 1-19 years+thinness 5-9 years) | Factor5(Hepatitis B+Polio+Diphtheria) | Factor6(Life expectancy+Adult Mortality+HIV/AIDS)
+   Backward Elimination          10                                                                                                                                                          Year, Life expectancy, Adult Mortality, Alcohol, Hepatitis B, Polio, Total expenditure, Population, thinness 5-9 years, Schooling
+      Forward Selection          10                                                                                                                        Life expectancy, Adult Mortality, infant deaths, Alcohol, Hepatitis B, Measles, Total expenditure, Population, thinness 1-19 years, Income composition of resources
+
+====================================================================================================
+STEP 3 [logistic] Models on original vs selected features - metrics & 5-fold CV
+====================================================================================================
+            Feature set  n_features  CV F1 mean  CV F1 std  CV Acc mean  CV Acc std  Test Accuracy  Test Precision  Test Recall  Test F1  Test ROC_AUC
+         Original (all)          20      0.8091     0.0364       0.9340      0.0123         0.9252          0.8085       0.7451   0.7755        0.9703
+    Low Variance Filter          16      0.8095     0.0349       0.9336      0.0128         0.9252          0.8152       0.7353   0.7732        0.9723
+High Correlation Filter          17      0.8095     0.0367       0.9340      0.0123         0.9252          0.8085       0.7451   0.7755        0.9704
+        Factor Analysis           6      0.6899     0.0192       0.8974      0.0081         0.8963          0.7531       0.5980   0.6667        0.9556
+   Backward Elimination          10      0.8187     0.0384       0.9370      0.0136         0.9252          0.8152       0.7353   0.7732        0.9651
+      Forward Selection          10      0.8174     0.0261       0.9374      0.0083         0.9218          0.8111       0.7157   0.7604        0.9694
+
+====================================================================================================
+STEP 4 [logistic] Gradient Descent (from scratch): learning rate & iterations
+====================================================================================================
+Original features, max 3000 iterations. loss@N = training loss after N iterations
+ learning rate status  converged at iter  loss@10  loss@50  loss@100  loss@500  loss@1000  loss@3000  final test F1
+        0.0001     ok                NaN   0.6928   0.6911    0.6890    0.6733     0.6554     0.5993         0.6018
+        0.0010     ok                NaN   0.6894   0.6736    0.6557    0.5594     0.4933     0.3696         0.7679
+        0.0100     ok                NaN   0.6587   0.5607    0.4940    0.3138     0.2542     0.1995         0.7772
+        0.1000     ok                NaN   0.5014   0.3147    0.2543    0.1848     0.1714     0.1607         0.7857
+        0.5000     ok             1987.0   0.3188   0.2060    0.1847    0.1618     0.1583     0.1557         0.7755
+        1.5000     ok             1084.0   0.2293   0.1760    0.1661    0.1570     0.1557     0.1549         0.7629
+
+Convergence by feature set (lr=1.0, 3000 iterations):
+            Feature set  n_features  max |r| between inputs  converged at iter (tol 1e-6)  final train loss  GD test F1
+         Original (all)          20                  0.9963                          1365            0.1552      0.7629
+    Low Variance Filter          16                  0.9312                          1319            0.1577      0.7604
+High Correlation Filter          17                  0.7883                          1302            0.1552      0.7629
+        Factor Analysis           6                  0.0918                          1240            0.2057      0.6739
+   Backward Elimination          10                  0.7081                           697            0.1668      0.7732
+      Forward Selection          10                  0.7033                           919            0.1587      0.7708
+
+====================================================================================================
+STEP 5 [logistic] GridSearchCV
+====================================================================================================
+LogisticRegression(C, l1_ratio[0=L2,1=L1], class_weight), scoring = F1
+            Feature set  n_features                                             best params  best CV F1  Test Accuracy  Test Precision  Test Recall  Test F1  Test ROC_AUC
+         Original (all)          20       {'C': 0.1, 'class_weight': None, 'l1_ratio': 0.0}      0.8190         0.9303          0.8352       0.7451   0.7876        0.9666
+    Low Variance Filter          16 {'C': 100, 'class_weight': 'balanced', 'l1_ratio': 1.0}      0.8177         0.9286          0.7174       0.9706   0.8250        0.9735
+High Correlation Filter          17      {'C': 0.01, 'class_weight': None, 'l1_ratio': 0.0}      0.8199         0.9235          0.8065       0.7353   0.7692        0.9580
+        Factor Analysis           6  {'C': 10, 'class_weight': 'balanced', 'l1_ratio': 1.0}      0.7659         0.8878          0.6169       0.9314   0.7422        0.9549
+   Backward Elimination          10         {'C': 1, 'class_weight': None, 'l1_ratio': 1.0}      0.8172         0.9252          0.8152       0.7353   0.7732        0.9653
+      Forward Selection          10       {'C': 0.1, 'class_weight': None, 'l1_ratio': 0.0}      0.8145         0.9286          0.8191       0.7549   0.7857        0.9666
+
+====================================================================================================
+STEP 6 [logistic] Comparison of all approaches
+====================================================================================================
+            Feature set  n_features  CV F1 mean  CV F1 std  Test F1  converged at iter (tol 1e-6)  Test F1 (tuned)
+         Original (all)          20      0.8091     0.0364   0.7755                          1365           0.7876
+    Low Variance Filter          16      0.8095     0.0349   0.7732                          1319           0.8250
+High Correlation Filter          17      0.8095     0.0367   0.7755                          1302           0.7692
+        Factor Analysis           6      0.6899     0.0192   0.6667                          1240           0.7422
+   Backward Elimination          10      0.8187     0.0384   0.7732                           697           0.7732
+      Forward Selection          10      0.8174     0.0261   0.7604                           919           0.7857
+
+OBSERVATIONS (computed from the tables above)
+  * Best tuned test score : Low Variance Filter (0.8250, 16 features) vs Original 0.7876 with 20 features.
+  * Smallest set within 0.01 of the best CV score: Backward Elimination (10 features, CV 0.8187 vs best 0.8187).
+  * Factor Analysis: 6 factors, CV 0.6899 vs Original 0.8091 (change -0.1191) - big compression, clear accuracy cost, lost interpretability.
+  * GD convergence: fastest = Backward Elimination (697 iters, max input |r| = 0.71); slowest = Original (all) (1365 iters, max input |r| = 1.00).
+  * CV std ranges 0.0192-0.0384: differences between the top feature sets are of the same order as fold-to-fold noise, so do not over-read tiny gaps.
+
+====================================================================================================
+STEP 7 [logistic] SELF-LEARNING: how do we increase accuracy / reduce error?
+====================================================================================================
+(A) Forward-selection sweep: CV score vs number of features
+ k                           added  CV score
+ 1 Income composition of resources    0.6611
+ 2                         Alcohol    0.7701
+ 3                 Life expectancy    0.7954
+ 4                     Hepatitis B    0.7960
+ 5               Total expenditure    0.8005
+ 6                      Population    0.8061
+ 7                 Adult Mortality    0.8093
+ 8             thinness 1-19 years    0.8108
+ 9              thinness 5-9 years    0.8137
+10                         Measles    0.8137
+11               under-five deaths    0.8165
+12                   infant deaths    0.8165
+13                        HIV/AIDS    0.8174
+14                      Diphtheria    0.8155
+15                             GDP    0.8155
+16                             BMI    0.8131
+17                       Schooling    0.8135
+18                           Polio    0.8135
+19          percentage expenditure    0.8095
+20                            Year    0.8091
+    -> suggested k (smallest k within 0.01 of max CV score) = 7
+
+(B) Embedded selectors
+    Lasso / L1 keeps        : ['Year', 'Life expectancy', 'Adult Mortality', 'Alcohol', 'Hepatitis B', 'Total expenditure', 'Population', 'thinness 1-19 years', 'Income composition of resources']
+    Random-Forest top-10    : ['Alcohol', 'Income composition of resources', 'Life expectancy', 'thinness 5-9 years', 'Schooling', 'thinness 1-19 years', 'Adult Mortality', 'BMI', 'Total expenditure', 'percentage expenditure']
+            Feature set  n_features  CV F1 mean  CV F1 std  CV Acc mean  CV Acc std  Test Accuracy  Test Precision  Test Recall  Test F1  Test ROC_AUC
+  Lasso / L1 (embedded)           9      0.8118     0.0338       0.9349      0.0110         0.9235          0.8065       0.7353   0.7692        0.9697
+   Random-Forest top-10          10      0.7954     0.0267       0.9298      0.0092         0.9269          0.8471       0.7059   0.7701        0.9706
+Forward @ suggested k=7           7      0.8093     0.0300       0.9353      0.0108         0.9201          0.8313       0.6765   0.7459        0.9692
+
+(C) Improvement ladder (same split, every step builds on the previous)
+                                               Step  Test F1  Test Accuracy  Test ROC_AUC  CV F1 mean  CV F1 std
+                0. Baseline (median impute + scale)   0.7755         0.9252        0.9703      0.8091     0.0364
+                      1. + log1p on skewed features   0.8223         0.9405        0.9743      0.8216     0.0249
+                                2. + KNN imputation   0.8342         0.9439        0.9784      0.8181     0.0356
+          3. + poly-2 + balanced class weight (C=1)   0.8622         0.9473        0.9878      0.8592     0.0271
+4. + decision-threshold tuning (thr=0.56, from OOF)   0.8940         0.9609        0.9878      0.8592     0.0271
+                 5. Benchmark: HistGradientBoosting   0.9806         0.9932        0.9992      0.9557     0.0173
+
+(D) Validation honesty: random KFold vs GroupKFold by country
+              CV scheme  mean f1  std f1
+    Random KFold (rows)   0.8091  0.0364
+GroupKFold (by country)   0.7460  0.1076
+
+  -> Logistic steps 0->4 raise test F1 0.776 -> 0.894; boosting benchmark reaches 0.981.
+
+====================================================================================================
+DONE - tables in outputs/results, figures in outputs/figures
+====================================================================================================

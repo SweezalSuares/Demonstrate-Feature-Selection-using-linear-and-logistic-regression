@@ -1,0 +1,7 @@
+Technique,n_features,Features retained
+Original (all),20,"Year, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, under-five deaths, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, Population, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling, Status_Developing"
+Low Variance Filter,16,"Year, Adult Mortality, Alcohol, percentage expenditure, Hepatitis B, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, GDP, thinness 1-19 years, thinness 5-9 years, Income composition of resources, Schooling, Status_Developing"
+High Correlation Filter,17,"Year, Adult Mortality, infant deaths, Alcohol, percentage expenditure, Hepatitis B, Measles, BMI, Polio, Total expenditure, Diphtheria, HIV/AIDS, Population, thinness 1-19 years, Income composition of resources, Schooling, Status_Developing"
+Factor Analysis,6,Factor1(infant deaths+under-five deaths) | Factor2(thinness 1-19 years+thinness 5-9 years) | Factor3(percentage expenditure+GDP) | Factor4(Hepatitis B+Polio+Diphtheria) | Factor5(Income composition of resources+Schooling) | Factor6(Alcohol)
+Backward Elimination,10,"Adult Mortality, infant deaths, BMI, under-five deaths, Diphtheria, HIV/AIDS, GDP, Income composition of resources, Schooling, Status_Developing"
+Forward Selection,10,"Adult Mortality, Measles, BMI, Polio, Diphtheria, HIV/AIDS, GDP, Income composition of resources, Schooling, Status_Developing"
