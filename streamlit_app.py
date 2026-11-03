@@ -12,8 +12,6 @@ from lab3_core import *
 
 st.set_page_config(page_title="Lab 3 - Feature Selection", layout="wide")
 st.title("Lab 3 - Feature Selection & Reduction")
-st.caption("MAI511-2 Advanced Machine Learning | WHO Life Expectancy dataset")
-
 # ------------------------------------------------------------------ sidebar
 up = st.sidebar.file_uploader("Life_Expectancy_Data.csv (optional)", type="csv")
 task_name = st.sidebar.radio("Model", ["Linear Regression (Life expectancy)",
